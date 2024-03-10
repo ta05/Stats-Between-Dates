@@ -22,15 +22,12 @@ def retry(func, retries: int=3):
     return retry_wrapper
 
 
-def getSeasons(start_date: datetime, end_date: datetime) -> list[str]:
-    return [f'{year}-{str(year + 1)[-2:]}' for year in range(start_date.year, end_date.year + 1)]
-
-
 def getPlayerId(name: str) -> str:
     return players.find_players_by_full_name(name)[0]['id']
 
 
-def getPerGameMetrics(playerID: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+# Gets the player's box score stats for every game between start and end dates
+def getPlayerBoxScoreStats(playerID: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
 
     @retry
     def getGames(playerID: str, start_date: datetime, end_date: datetime) -> list[str]:
@@ -57,8 +54,9 @@ def getPerGameMetrics(playerID: str, start_date: datetime, end_date: datetime) -
     return data
 
 
-def getTotalStats(gameStats: pd.DataFrame) -> dict:
-    totalStats = gameStats[['GP', 'FG', 'FGA', 'PTS', 'FG3', 'FG3A', 'AST', 'OFF_REB', 'DEF_REB', 'TOT_REB', 'STL', 'BLK', 'TURNOVERS']].sum().rename({'TURNOVERS': 'TO'}).to_dict()
+# Combines the box score stats into totals
+def getPlayerTotalStats(boxScoreStats: pd.DataFrame) -> dict:
+    totalStats = boxScoreStats[['GP', 'FG', 'FGA', 'PTS', 'FG3', 'FG3A', 'AST', 'OFF_REB', 'DEF_REB', 'TOT_REB', 'STL', 'BLK', 'TURNOVERS']].sum().rename({'TURNOVERS': 'TO'}).to_dict()
 
     
     totalStats['FG%'] = totalStats['FG'] / totalStats['FGA']
@@ -80,9 +78,9 @@ def main():
     start_date = parse(input("Enter Start Date (MM/DD/YYYY): "))
     end_date = parse(input("Enter End Date (MM/DD/YYYY): "))
 
-    gameStats = getPerGameMetrics(playerID, start_date, end_date)
+    boxScoreStats = getPlayerBoxScoreStats(playerID, start_date, end_date)
 
-    totalStats = getTotalStats(gameStats)
+    totalStats = getPlayerTotalStats(boxScoreStats)
 
     print(totalStats)
 
